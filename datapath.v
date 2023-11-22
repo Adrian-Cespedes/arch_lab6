@@ -63,5 +63,126 @@ module datapath (
 	// (Address Mux), etc. so that your code is easier to understand.
 
 	// ADD CODE HERE
+
+  // Registers
+  flopenr #(32) pcreg(
+		.clk(clk),
+		.reset(reset),
+    .en(PCWrite),
+		.d(PCNext),
+		.q(PC)
+	);
+
+  flopenr #(32) instrreg(
+		.clk(clk),
+		.reset(reset),
+    .en(IRWrite),
+		.d(ReadData),
+		.q(Instr)
+	);
+
+  flopr #(32) datareg(
+		.clk(clk),
+		.reset(reset),
+		.d(ReadData),
+		.q(Data)
+	);
+
+  flopr #(32) rd1reg(
+		.clk(clk),
+		.reset(reset),
+		.d(RD1),
+		.q(A)
+	);
+
+  flopr #(32) rd2reg(
+		.clk(clk),
+		.reset(reset),
+		.d(RD2),
+		.q(WriteData)
+	);
+
+  flopr #(32) alureg(
+		.clk(clk),
+		.reset(reset),
+		.d(ALUResult),
+		.q(ALUOut)
+	);
+  /////////////////////////////////////////
+
+  // Mux's
+  mux2 #(32) adrmux(
+    .d0(PC),
+    .d1(Result),
+    .s(AdrSrc),
+    .y(Adr)
+  );
+
+  mux2 #(4) ra1mux(
+		.d0(Instr[19:16]),
+		.d1(4'b1111),
+		.s(RegSrc[0]),
+		.y(RA1)
+	);
+
+	mux2 #(4) ra2mux(
+		.d0(Instr[3:0]),
+		.d1(Instr[15:12]),
+		.s(RegSrc[1]),
+		.y(RA2)
+	);
+
+  mux2 #(32) srcamux(
+		.d0(A),
+		.d1(PC),
+		.s(ALUSrcA),
+		.y(SrcA)
+	);
+
+  mux3 #(32) srcbmux(
+		.d0(WriteData),
+		.d1(ExtImm),
+    .d2(32'b100),
+		.s(ALUSrc),
+		.y(SrcB)
+	);
+
+  mux3 #(32) alumux(
+		.d0(ALUOut),
+		.d1(Data),
+    .d2(ALUResult),
+		.s(ResultSrc),
+		.y(Result)
+	);
+  /////////////////////////////////
+
+  regfile rf(
+		.clk(clk),
+		.we3(RegWrite),
+		.ra1(RA1),
+		.ra2(RA2),
+		.wa3(Instr[15:12]),
+		.wd3(Result),
+		.r15(Result),
+		.rd1(RD1),
+		.rd2(RD2)
+	);
+
+  extend ext(
+		.Instr(Instr[23:0]),
+		.ImmSrc(ImmSrc),
+		.ExtImm(ExtImm)
+	);
+
+  alu alu(
+		.a(SrcA),
+		.b(SrcB),
+		.ALUControl(ALUControl),
+		.Result(ALUResult),
+		.ALUFlags(ALUFlags)
+	);
+
+  assign PCNext = Result;
+
 endmodule
 
